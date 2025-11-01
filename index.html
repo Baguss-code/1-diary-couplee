@@ -691,6 +691,8 @@
             color: var(--primary);
             margin: 20px 0;
             letter-spacing: 3px;
+            word-break: break-all;
+            text-align: center;
         }
     </style>
 </head>
@@ -779,11 +781,14 @@
                 <h2>Hubungkan dengan Pasangan</h2>
                 <p>Bagikan kode ini kepada pasangan Anda:</p>
                 <div class="partner-code" id="myPartnerCode"></div>
+                <button class="btn" onclick="copyPartnerCode()" style="margin-bottom: 20px; background: #27ae60;">📋 Salin Kode</button>
+                <hr style="margin: 30px 0; border: none; border-top: 2px solid #e1e8ed;">
                 <div class="form-group">
                     <label>Atau masukkan kode pasangan:</label>
-                    <input type="text" id="partnerCodeInput" placeholder="Masukkan kode pasangan">
+                    <input type="text" id="partnerCodeInput" placeholder="Contoh: ABC12XYZ" style="text-transform: uppercase;">
                     <button class="btn" onclick="connectPartner()" style="margin-top: 10px;">Hubungkan</button>
                 </div>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">💡 Tips: Salin kode langsung agar tidak ada kesalahan ketik</p>
             </div>
 
             <!-- Tabs -->
@@ -1003,11 +1008,35 @@
         // Authentication
         function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
             const password = document.getElementById('loginPassword').value;
             const use2FA = document.getElementById('login2FA').checked;
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            if (!email || !password) {
+                showNotification('Email dan password harus diisi!', 'error');
+                return;
+            }
+
+            // Ambil data users dengan aman
+            let users = [];
+            try {
+                const usersData = localStorage.getItem('users');
+                if (usersData) {
+                    users = JSON.parse(usersData);
+                    if (!Array.isArray(users)) {
+                        users = [];
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing users:', error);
+                showNotification('Terjadi kesalahan. Silakan refresh halaman.', 'error');
+                return;
+            }
+
+            console.log('🔍 Mencari user dengan email:', email);
+            console.log('📋 Total users terdaftar:', users.length);
+            console.log('👥 Semua users:', users.map(u => ({ name: u.name, email: u.email })));
+
             const user = users.find(u => u.email === email && u.password === password);
 
             if (user) {
@@ -1020,34 +1049,60 @@
                 }
                 currentUser = user;
                 localStorage.setItem('currentUser', JSON.stringify(user));
+                console.log('✅ Login berhasil:', user.name);
                 showNotification('Login berhasil! Selamat datang ' + user.name, 'success');
                 showApp();
             } else {
-                showNotification('Email atau password salah!', 'error');
+                showNotification('❌ Email atau password salah!', 'error');
+                console.log('❌ User tidak ditemukan');
             }
         }
 
         function handleRegister(e) {
             e.preventDefault();
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim().toLowerCase();
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (!name || !email || !password) {
+                showNotification('Semua field harus diisi!', 'error');
+                return;
+            }
 
             if (password !== confirmPassword) {
                 showNotification('Password tidak cocok!', 'error');
                 return;
             }
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            if (password.length < 8) {
+                showNotification('Password minimal 8 karakter!', 'error');
+                return;
+            }
+
+            // Ambil data users dengan aman
+            let users = [];
+            try {
+                const usersData = localStorage.getItem('users');
+                if (usersData) {
+                    users = JSON.parse(usersData);
+                    if (!Array.isArray(users)) {
+                        users = [];
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing users:', error);
+                users = [];
+            }
             
+            // Cek email sudah terdaftar
             if (users.find(u => u.email === email)) {
                 showNotification('Email sudah terdaftar!', 'error');
                 return;
             }
 
             const newUser = {
-                id: 'user_' + Date.now(),
+                id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
                 name,
                 email,
                 password,
@@ -1057,9 +1112,20 @@
             };
 
             users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
             
-            showNotification('Registrasi berhasil! Silakan login.', 'success');
+            // Simpan dengan error handling
+            try {
+                localStorage.setItem('users', JSON.stringify(users));
+                console.log('✅ User berhasil disimpan:', newUser.name, 'Total users:', users.length);
+                console.log('Semua users:', users.map(u => ({ name: u.name, email: u.email, code: u.partnerCode })));
+            } catch (error) {
+                console.error('Error menyimpan user:', error);
+                showNotification('Gagal menyimpan data. Storage mungkin penuh!', 'error');
+                return;
+            }
+            
+            showNotification('✅ Registrasi berhasil! Silakan login dengan email: ' + email, 'success');
+            document.getElementById('registerForm').reset();
             document.getElementById('showLogin').click();
         }
 
@@ -1078,6 +1144,14 @@
             document.getElementById('registerPage').classList.add('hidden');
             document.getElementById('appContainer').classList.add('active');
 
+            // Sinkronisasi data user terbaru dari localStorage
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const latestUser = users.find(u => u.id === currentUser.id);
+            if (latestUser) {
+                currentUser = latestUser;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+
             document.getElementById('userName').textContent = currentUser.name;
             document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
             document.getElementById('myPartnerCode').textContent = currentUser.partnerCode;
@@ -1086,7 +1160,6 @@
                 document.getElementById('partnerSection').classList.remove('hidden');
             } else {
                 document.getElementById('partnerSection').classList.add('hidden');
-                const users = JSON.parse(localStorage.getItem('users') || '[]');
                 const partner = users.find(u => u.id === currentUser.partnerId);
                 if (partner) {
                     document.getElementById('partnerName').textContent = '💑 Dengan ' + partner.name;
@@ -1114,42 +1187,101 @@
                 return;
             }
 
+            if (partnerCode.length !== 8) {
+                showNotification('Kode harus 8 karakter!', 'error');
+                return;
+            }
+
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             
-            // Debug: tampilkan info untuk membantu troubleshooting
-            console.log('Mencari kode:', partnerCode);
-            console.log('Kode saya:', currentUser.partnerCode);
-            console.log('Semua user:', users.map(u => ({ name: u.name, code: u.partnerCode })));
+            // Debug info
+            console.log('=== DEBUG INFO ===');
+            console.log('Kode yang dicari:', partnerCode);
+            console.log('User saat ini:', currentUser.name, 'Kode:', currentUser.partnerCode);
+            console.log('Semua users:');
+            users.forEach(u => {
+                console.log(`- ${u.name}: ${u.partnerCode} (ID: ${u.id})`);
+            });
             
+            // Cari partner dengan normalisasi string
             const partner = users.find(u => {
-                const userCode = u.partnerCode ? u.partnerCode.trim().toUpperCase() : '';
-                return userCode === partnerCode && u.id !== currentUser.id;
+                if (u.id === currentUser.id) return false; // Skip diri sendiri
+                const userCode = String(u.partnerCode || '').trim().toUpperCase();
+                const searchCode = String(partnerCode).trim().toUpperCase();
+                console.log(`Comparing: "${userCode}" === "${searchCode}" ?`, userCode === searchCode);
+                return userCode === searchCode;
             });
 
             if (!partner) {
-                showNotification('Kode pasangan tidak valid! Pastikan kode diketik dengan benar (tanpa spasi).', 'error');
-                console.log('Partner tidak ditemukan');
+                showNotification('❌ Kode tidak ditemukan! Periksa kembali kode yang dimasukkan.', 'error');
+                console.log('Partner tidak ditemukan!');
+                return;
+            }
+
+            if (partner.partnerId) {
+                showNotification('Pasangan ini sudah terhubung dengan orang lain!', 'error');
                 return;
             }
 
             // Update both users
-            const userIndex = users.findIndex(u => u.id === currentUser.id);
-            const partnerIndex = users.findIndex(u => u.id === partner.id);
+            const users2 = JSON.parse(localStorage.getItem('users') || '[]');
+            const userIndex = users2.findIndex(u => u.id === currentUser.id);
+            const partnerIndex = users2.findIndex(u => u.id === partner.id);
             
-            users[userIndex].partnerId = partner.id;
-            users[partnerIndex].partnerId = currentUser.id;
+            if (userIndex === -1 || partnerIndex === -1) {
+                showNotification('Terjadi kesalahan! Silakan refresh halaman.', 'error');
+                return;
+            }
+
+            users2[userIndex].partnerId = partner.id;
+            users2[partnerIndex].partnerId = currentUser.id;
             
             currentUser.partnerId = partner.id;
 
-            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('users', JSON.stringify(users2));
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-            showNotification('Berhasil terhubung dengan ' + partner.name + '! 💕', 'success');
+            showNotification('✅ Berhasil terhubung dengan ' + partner.name + '! 💕', 'success');
             
             // Clear input
             document.getElementById('partnerCodeInput').value = '';
             
-            showApp();
+            setTimeout(() => {
+                showApp();
+            }, 500);
+        }
+
+        function copyPartnerCode() {
+            const code = currentUser.partnerCode;
+            
+            // Modern clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    showNotification('Kode berhasil disalin: ' + code, 'success');
+                }).catch(() => {
+                    // Fallback
+                    fallbackCopy(code);
+                });
+            } else {
+                // Fallback untuk browser lama
+                fallbackCopy(code);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showNotification('Kode berhasil disalin: ' + text, 'success');
+            } catch (err) {
+                showNotification('Gagal menyalin. Silakan salin manual: ' + text, 'error');
+            }
+            document.body.removeChild(textarea);
         }
 
         function disconnectPartner() {
