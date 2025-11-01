@@ -33,6 +33,38 @@
             padding: 20px;
         }
 
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 9999;
+        }
+
+        .loading.hidden {
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Auth Pages */
         .auth-container {
             display: flex;
@@ -128,6 +160,12 @@
             box-shadow: 0 10px 20px var(--shadow);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-secondary {
             background: linear-gradient(135deg, #667eea, #764ba2);
         }
@@ -142,6 +180,7 @@
             color: var(--primary);
             text-decoration: none;
             font-weight: 600;
+            cursor: pointer;
         }
 
         /* Main App */
@@ -223,6 +262,28 @@
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             box-shadow: 0 5px 15px var(--shadow);
+        }
+
+        /* Partner Section */
+        .partner-request {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .partner-code {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+            letter-spacing: 3px;
+            word-break: break-all;
+            text-align: center;
         }
 
         /* Add Memory Section */
@@ -674,36 +735,31 @@
             display: none !important;
         }
 
-        .partner-request {
-            background: white;
-            padding: 30px;
+        .cloud-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 5px 12px;
             border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .partner-code {
-            background: var(--light);
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--primary);
-            margin: 20px 0;
-            letter-spacing: 3px;
-            word-break: break-all;
-            text-align: center;
+            font-size: 12px;
+            margin-left: 10px;
         }
     </style>
 </head>
 <body>
+    <!-- Loading -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Memuat data...</p>
+    </div>
+
     <!-- Login Page -->
     <div id="loginPage" class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
                 <div class="hearts">💕</div>
-                <h1>Couple Diary</h1>
-                <p>Simpan kenangan indah bersama</p>
+                <h1>Couple Diary <span class="cloud-badge">☁️ Cloud</span></h1>
+                <p>Simpan kenangan indah bersama di cloud</p>
             </div>
             <form id="loginForm">
                 <div class="form-group">
@@ -714,16 +770,10 @@
                     <label>Password</label>
                     <input type="password" id="loginPassword" required>
                 </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="login2FA">
-                        Aktifkan Autentikasi 2 Faktor
-                    </label>
-                </div>
-                <button type="submit" class="btn">Masuk</button>
+                <button type="submit" class="btn" id="loginBtn">Masuk</button>
             </form>
             <div class="auth-footer">
-                Belum punya akun? <a href="#" id="showRegister">Daftar di sini</a>
+                Belum punya akun? <a id="showRegister">Daftar di sini</a>
             </div>
         </div>
     </div>
@@ -753,10 +803,10 @@
                     <label>Konfirmasi Password</label>
                     <input type="password" id="regConfirmPassword" required>
                 </div>
-                <button type="submit" class="btn">Daftar</button>
+                <button type="submit" class="btn" id="registerBtn">Daftar</button>
             </form>
             <div class="auth-footer">
-                Sudah punya akun? <a href="#" id="showLogin">Masuk di sini</a>
+                Sudah punya akun? <a id="showLogin">Masuk di sini</a>
             </div>
         </div>
     </div>
@@ -765,7 +815,7 @@
     <div id="appContainer" class="app-container">
         <div class="container">
             <div class="header">
-                <h1>💕 Couple Diary</h1>
+                <h1>💕 Couple Diary <span class="cloud-badge">☁️ Cloud Sync</span></h1>
                 <div class="user-info">
                     <div class="user-avatar" id="userAvatar"></div>
                     <div>
@@ -778,7 +828,7 @@
 
             <!-- Partner Connection -->
             <div id="partnerSection" class="partner-request hidden">
-                <h2>Hubungkan dengan Pasangan</h2>
+                <h2>☁️ Hubungkan dengan Pasangan (Cloud Sync)</h2>
                 <p>Bagikan kode ini kepada pasangan Anda:</p>
                 <div class="partner-code" id="myPartnerCode"></div>
                 <button class="btn" onclick="copyPartnerCode()" style="margin-bottom: 20px; background: #27ae60;">📋 Salin Kode</button>
@@ -788,7 +838,7 @@
                     <input type="text" id="partnerCodeInput" placeholder="Contoh: ABC12XYZ" style="text-transform: uppercase;">
                     <button class="btn" onclick="connectPartner()" style="margin-top: 10px;">Hubungkan</button>
                 </div>
-                <p style="margin-top: 15px; font-size: 14px; color: #666;">💡 Tips: Salin kode langsung agar tidak ada kesalahan ketik</p>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">💡 Data tersimpan di cloud, bisa diakses dari perangkat manapun!</p>
             </div>
 
             <!-- Tabs -->
@@ -865,24 +915,11 @@
             <!-- Settings Tab -->
             <div id="settingsTab" class="hidden">
                 <div class="settings-section">
-                    <h3>Privasi & Keamanan</h3>
-                    <div class="form-group">
-                        <label style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>Autentikasi 2 Faktor</span>
-                            <label class="switch">
-                                <input type="checkbox" id="setting2FA">
-                                <span class="slider"></span>
-                            </label>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>Notifikasi Kenangan Baru</span>
-                            <label class="switch">
-                                <input type="checkbox" id="settingNotif" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </label>
+                    <h3>Akun & Koneksi</h3>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong>Email:</strong> <span id="settingEmail"></span><br>
+                        <strong>Kode Pasangan:</strong> <span id="settingCode"></span><br>
+                        <strong>Status:</strong> <span id="settingStatus"></span>
                     </div>
                 </div>
                 <div class="settings-section">
@@ -949,7 +986,7 @@
                 </div>
                 <div class="form-group">
                     <label>Cerita</label>
-                    <textarea id="editStory" rows="6" required></textarea>
+                    <textarea id="editStory" rows="6" required>< /textarea>
                 </div>
                 <button type="submit" class="btn">Simpan Perubahan</button>
             </form>
@@ -957,33 +994,30 @@
     </div>
 
     <script>
-        // State Management
+        // Global State
         let currentUser = null;
         let memories = [];
         let selectedFiles = [];
         let currentTab = 'timeline';
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFromStorage();
+        document.addEventListener('DOMContentLoaded', async function() {
             setupEventListeners();
             
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                showApp();
+            // Check if user was logged in
+            const savedEmail = localStorage.getItem('userEmail');
+            if (savedEmail) {
+                await checkAutoLogin(savedEmail);
             }
         });
 
         function setupEventListeners() {
-            // Auth forms
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
             document.getElementById('registerForm').addEventListener('submit', handleRegister);
             document.getElementById('memoryForm').addEventListener('submit', handleAddMemory);
             document.getElementById('editMemoryForm').addEventListener('submit', handleEditMemory);
             document.getElementById('changePasswordForm').addEventListener('submit', handleChangePassword);
 
-            // Switch pages
             document.getElementById('showRegister').addEventListener('click', (e) => {
                 e.preventDefault();
                 document.getElementById('loginPage').classList.add('hidden');
@@ -996,142 +1030,202 @@
                 document.getElementById('loginPage').classList.remove('hidden');
             });
 
-            // File upload
             document.getElementById('memoryImages').addEventListener('change', handleFileSelect);
-
-            // Filters
             document.getElementById('searchMemory').addEventListener('input', filterMemories);
             document.getElementById('filterCategory').addEventListener('change', filterMemories);
             document.getElementById('filterMonth').addEventListener('change', filterMemories);
         }
 
-        // Authentication
-        function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-            const password = document.getElementById('loginPassword').value;
-            const use2FA = document.getElementById('login2FA').checked;
-
-            if (!email || !password) {
-                showNotification('Email dan password harus diisi!', 'error');
-                return;
-            }
-
-            // Ambil data users dengan aman
-            let users = [];
+        // Cloud Storage Functions
+        async function saveToCloud(key, data, shared = true) {
             try {
-                const usersData = localStorage.getItem('users');
-                if (usersData) {
-                    users = JSON.parse(usersData);
-                    if (!Array.isArray(users)) {
-                        users = [];
-                    }
-                }
+                const result = await window.storage.set(key, JSON.stringify(data), shared);
+                return result !== null;
             } catch (error) {
-                console.error('Error parsing users:', error);
-                showNotification('Terjadi kesalahan. Silakan refresh halaman.', 'error');
-                return;
-            }
-
-            console.log('🔍 Mencari user dengan email:', email);
-            console.log('📋 Total users terdaftar:', users.length);
-            console.log('👥 Semua users:', users.map(u => ({ name: u.name, email: u.email })));
-
-            const user = users.find(u => u.email === email && u.password === password);
-
-            if (user) {
-                if (use2FA) {
-                    const code = prompt('Masukkan kode 2FA (gunakan kode dummy: 123456):');
-                    if (code !== '123456') {
-                        showNotification('Kode 2FA salah!', 'error');
-                        return;
-                    }
-                }
-                currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                console.log('✅ Login berhasil:', user.name);
-                showNotification('Login berhasil! Selamat datang ' + user.name, 'success');
-                showApp();
-            } else {
-                showNotification('❌ Email atau password salah!', 'error');
-                console.log('❌ User tidak ditemukan');
+                console.error('Error saving to cloud:', error);
+                return false;
             }
         }
 
-        function handleRegister(e) {
+        async function getFromCloud(key, shared = true) {
+            try {
+                const result = await window.storage.get(key, shared);
+                return result ? JSON.parse(result.value) : null;
+            } catch (error) {
+                console.error('Error getting from cloud:', error);
+                return null;
+            }
+        }
+
+        async function deleteFromCloud(key, shared = true) {
+            try {
+                await window.storage.delete(key, shared);
+                return true;
+            } catch (error) {
+                console.error('Error deleting from cloud:', error);
+                return false;
+            }
+        }
+
+        async function listFromCloud(prefix = '', shared = true) {
+            try {
+                const result = await window.storage.list(prefix, shared);
+                return result ? result.keys : [];
+            } catch (error) {
+                console.error('Error listing from cloud:', error);
+                return [];
+            }
+        }
+
+        // Auth Functions
+        async function handleRegister(e) {
             e.preventDefault();
+            const btn = document.getElementById('registerBtn');
+            btn.disabled = true;
+            btn.textContent = 'Mendaftar...';
+
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim().toLowerCase();
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
 
-            if (!name || !email || !password) {
-                showNotification('Semua field harus diisi!', 'error');
-                return;
-            }
-
             if (password !== confirmPassword) {
                 showNotification('Password tidak cocok!', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Daftar';
                 return;
             }
 
             if (password.length < 8) {
                 showNotification('Password minimal 8 karakter!', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Daftar';
                 return;
             }
 
-            // Ambil data users dengan aman
-            let users = [];
-            try {
-                const usersData = localStorage.getItem('users');
-                if (usersData) {
-                    users = JSON.parse(usersData);
-                    if (!Array.isArray(users)) {
-                        users = [];
-                    }
-                }
-            } catch (error) {
-                console.error('Error parsing users:', error);
-                users = [];
-            }
-            
-            // Cek email sudah terdaftar
-            if (users.find(u => u.email === email)) {
+            // Check if email exists
+            const existingUser = await getFromCloud('user:' + email);
+            if (existingUser) {
                 showNotification('Email sudah terdaftar!', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Daftar';
                 return;
             }
 
+            // Generate unique partner code
+            const partnerCode = generatePartnerCode();
+            
             const newUser = {
                 id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
                 name,
                 email,
                 password,
-                partnerCode: generatePartnerCode(),
+                partnerCode,
                 partnerId: null,
                 createdAt: new Date().toISOString()
             };
 
-            users.push(newUser);
+            // Save to cloud (shared = true so accessible from any device)
+            const saved = await saveToCloud('user:' + email, newUser);
             
-            // Simpan dengan error handling
-            try {
-                localStorage.setItem('users', JSON.stringify(users));
-                console.log('✅ User berhasil disimpan:', newUser.name, 'Total users:', users.length);
-                console.log('Semua users:', users.map(u => ({ name: u.name, email: u.email, code: u.partnerCode })));
-            } catch (error) {
-                console.error('Error menyimpan user:', error);
-                showNotification('Gagal menyimpan data. Storage mungkin penuh!', 'error');
+            if (saved) {
+                showNotification('✅ Registrasi berhasil! Silakan login.', 'success');
+                document.getElementById('registerForm').reset();
+                document.getElementById('showLogin').click();
+            } else {
+                showNotification('Gagal menyimpan data. Coba lagi.', 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Daftar';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Masuk...';
+
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword').value;
+
+            // Get user from cloud
+            const user = await getFromCloud('user:' + email);
+
+            if (!user) {
+                showNotification('Email tidak terdaftar!', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Masuk';
                 return;
             }
+
+            if (user.password !== password) {
+                showNotification('Password salah!', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Masuk';
+                return;
+            }
+
+            currentUser = user;
+            localStorage.setItem('userEmail', email);
             
-            showNotification('✅ Registrasi berhasil! Silakan login dengan email: ' + email, 'success');
-            document.getElementById('registerForm').reset();
-            document.getElementById('showLogin').click();
+            showNotification('Login berhasil! Selamat datang ' + user.name + ' 💕', 'success');
+            await showApp();
+
+            btn.disabled = false;
+            btn.textContent = 'Masuk';
+        }
+
+        async function checkAutoLogin(email) {
+            showLoading(true);
+            const user = await getFromCloud('user:' + email);
+            if (user) {
+                currentUser = user;
+                await showApp();
+            }
+            showLoading(false);
+        }
+
+        function logout() {
+            if (confirm('Yakin ingin keluar?')) {
+                localStorage.removeItem('userEmail');
+                currentUser = null;
+                location.reload();
+            }
+        }
+
+        async function showApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('registerPage').classList.add('hidden');
+            document.getElementById('appContainer').classList.add('active');
+
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('myPartnerCode').textContent = currentUser.partnerCode;
+
+            // Update settings
+            document.getElementById('settingEmail').textContent = currentUser.email;
+            document.getElementById('settingCode').textContent = currentUser.partnerCode;
+
+            if (!currentUser.partnerId) {
+                document.getElementById('partnerSection').classList.remove('hidden');
+                document.getElementById('settingStatus').innerHTML = '<span style="color: #e67e22;">Belum terhubung</span>';
+            } else {
+                document.getElementById('partnerSection').classList.add('hidden');
+                const partner = await getFromCloud('user_by_id:' + currentUser.partnerId);
+                if (partner) {
+                    document.getElementById('partnerName').textContent = '💑 Dengan ' + partner.name;
+                    document.getElementById('settingStatus').innerHTML = '<span style="color: #27ae60;">✓ Terhubung dengan ' + partner.name + '</span>';
+                }
+            }
+
+            await loadMemories();
+            renderTimeline();
+            renderGallery();
         }
 
         function generatePartnerCode() {
-            // Generate kode 8 karakter yang lebih mudah dibaca
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Hindari karakter mirip: I, O, 0, 1
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             let code = '';
             for (let i = 0; i < 8; i++) {
                 code += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -1139,131 +1233,93 @@
             return code;
         }
 
-        function showApp() {
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('registerPage').classList.add('hidden');
-            document.getElementById('appContainer').classList.add('active');
-
-            // Sinkronisasi data user terbaru dari localStorage
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const latestUser = users.find(u => u.id === currentUser.id);
-            if (latestUser) {
-                currentUser = latestUser;
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        // Partner Connection
+        async function connectPartner() {
+            const partnerCode = document.getElementById('partnerCodeInput').value.trim().toUpperCase();
+            
+            if (!partnerCode || partnerCode.length !== 8) {
+                showNotification('Masukkan kode 8 karakter!', 'error');
+                return;
             }
 
-            document.getElementById('userName').textContent = currentUser.name;
-            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
-            document.getElementById('myPartnerCode').textContent = currentUser.partnerCode;
+            showLoading(true);
 
-            if (!currentUser.partnerId) {
-                document.getElementById('partnerSection').classList.remove('hidden');
-            } else {
-                document.getElementById('partnerSection').classList.add('hidden');
-                const partner = users.find(u => u.id === currentUser.partnerId);
-                if (partner) {
-                    document.getElementById('partnerName').textContent = '💑 Dengan ' + partner.name;
+            // Search for partner by code
+            const userKeys = await listFromCloud('user:');
+            let partner = null;
+
+            for (const key of userKeys) {
+                const user = await getFromCloud(key);
+                if (user && user.partnerCode === partnerCode && user.email !== currentUser.email) {
+                    partner = user;
+                    break;
                 }
             }
 
-            loadMemories();
-            renderTimeline();
-            renderGallery();
-        }
-
-        function logout() {
-            if (confirm('Yakin ingin keluar?')) {
-                localStorage.removeItem('currentUser');
-                currentUser = null;
-                location.reload();
-            }
-        }
-
-        function connectPartner() {
-            const partnerCode = document.getElementById('partnerCodeInput').value.trim().toUpperCase();
-            
-            if (!partnerCode) {
-                showNotification('Masukkan kode pasangan!', 'error');
-                return;
-            }
-
-            if (partnerCode.length !== 8) {
-                showNotification('Kode harus 8 karakter!', 'error');
-                return;
-            }
-
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            // Debug info
-            console.log('=== DEBUG INFO ===');
-            console.log('Kode yang dicari:', partnerCode);
-            console.log('User saat ini:', currentUser.name, 'Kode:', currentUser.partnerCode);
-            console.log('Semua users:');
-            users.forEach(u => {
-                console.log(`- ${u.name}: ${u.partnerCode} (ID: ${u.id})`);
-            });
-            
-            // Cari partner dengan normalisasi string
-            const partner = users.find(u => {
-                if (u.id === currentUser.id) return false; // Skip diri sendiri
-                const userCode = String(u.partnerCode || '').trim().toUpperCase();
-                const searchCode = String(partnerCode).trim().toUpperCase();
-                console.log(`Comparing: "${userCode}" === "${searchCode}" ?`, userCode === searchCode);
-                return userCode === searchCode;
-            });
-
             if (!partner) {
-                showNotification('❌ Kode tidak ditemukan! Periksa kembali kode yang dimasukkan.', 'error');
-                console.log('Partner tidak ditemukan!');
+                showNotification('❌ Kode pasangan tidak ditemukan!', 'error');
+                showLoading(false);
                 return;
             }
 
             if (partner.partnerId) {
                 showNotification('Pasangan ini sudah terhubung dengan orang lain!', 'error');
+                showLoading(false);
                 return;
             }
 
             // Update both users
-            const users2 = JSON.parse(localStorage.getItem('users') || '[]');
-            const userIndex = users2.findIndex(u => u.id === currentUser.id);
-            const partnerIndex = users2.findIndex(u => u.id === partner.id);
-            
-            if (userIndex === -1 || partnerIndex === -1) {
-                showNotification('Terjadi kesalahan! Silakan refresh halaman.', 'error');
-                return;
-            }
-
-            users2[userIndex].partnerId = partner.id;
-            users2[partnerIndex].partnerId = currentUser.id;
-            
             currentUser.partnerId = partner.id;
+            partner.partnerId = currentUser.id;
 
-            localStorage.setItem('users', JSON.stringify(users2));
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            // Save current user
+            await saveToCloud('user:' + currentUser.email, currentUser);
+            // Save partner
+            await saveToCloud('user:' + partner.email, partner);
+            // Save partner by ID for easy lookup
+            await saveToCloud('user_by_id:' + partner.id, partner);
+            await saveToCloud('user_by_id:' + currentUser.id, currentUser);
 
             showNotification('✅ Berhasil terhubung dengan ' + partner.name + '! 💕', 'success');
-            
-            // Clear input
             document.getElementById('partnerCodeInput').value = '';
             
-            setTimeout(() => {
-                showApp();
-            }, 500);
+            showLoading(false);
+            await showApp();
+        }
+
+        async function disconnectPartner() {
+            if (!confirm('Yakin ingin memutuskan koneksi dengan pasangan?')) return;
+
+            showLoading(true);
+
+            if (currentUser.partnerId) {
+                const partner = await getFromCloud('user_by_id:' + currentUser.partnerId);
+                if (partner) {
+                    partner.partnerId = null;
+                    await saveToCloud('user:' + partner.email, partner);
+                    await saveToCloud('user_by_id:' + partner.id, partner);
+                }
+            }
+
+            currentUser.partnerId = null;
+            await saveToCloud('user:' + currentUser.email, currentUser);
+            await saveToCloud('user_by_id:' + currentUser.id, currentUser);
+
+            showNotification('Koneksi pasangan telah diputus', 'info');
+            showLoading(false);
+            await showApp();
         }
 
         function copyPartnerCode() {
             const code = currentUser.partnerCode;
             
-            // Modern clipboard API
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(code).then(() => {
-                    showNotification('Kode berhasil disalin: ' + code, 'success');
+                    showNotification('✅ Kode berhasil disalin: ' + code, 'success');
                 }).catch(() => {
-                    // Fallback
                     fallbackCopy(code);
                 });
             } else {
-                // Fallback untuk browser lama
                 fallbackCopy(code);
             }
         }
@@ -1277,35 +1333,32 @@
             textarea.select();
             try {
                 document.execCommand('copy');
-                showNotification('Kode berhasil disalin: ' + text, 'success');
+                showNotification('✅ Kode berhasil disalin: ' + text, 'success');
             } catch (err) {
-                showNotification('Gagal menyalin. Silakan salin manual: ' + text, 'error');
+                showNotification('Gagal menyalin: ' + text, 'error');
             }
             document.body.removeChild(textarea);
         }
 
-        function disconnectPartner() {
-            if (!confirm('Yakin ingin memutuskan koneksi dengan pasangan?')) return;
-
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const partnerIndex = users.findIndex(u => u.id === currentUser.partnerId);
-            
-            if (partnerIndex !== -1) {
-                users[partnerIndex].partnerId = null;
+        // Memory Management
+        async function loadMemories() {
+            if (!currentUser.partnerId) {
+                memories = [];
+                return;
             }
 
-            currentUser.partnerId = null;
-            const userIndex = users.findIndex(u => u.id === currentUser.id);
-            users[userIndex] = currentUser;
-
-            localStorage.setItem('users', JSON.stringify(users));
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-            showNotification('Koneksi pasangan telah diputus', 'info');
-            showApp();
+            const coupleId = [currentUser.id, currentUser.partnerId].sort().join('_');
+            const memoryKeys = await listFromCloud('memory:' + coupleId);
+            
+            memories = [];
+            for (const key of memoryKeys) {
+                const memory = await getFromCloud(key);
+                if (memory) {
+                    memories.push(memory);
+                }
+            }
         }
 
-        // Memory Management
         function handleFileSelect(e) {
             const files = Array.from(e.target.files);
             
@@ -1348,6 +1401,8 @@
                 return;
             }
 
+            showLoading(true);
+
             const title = document.getElementById('memoryTitle').value;
             const category = document.getElementById('memoryCategory').value;
             const date = document.getElementById('memoryDate').value;
@@ -1359,8 +1414,11 @@
                 images.push(base64);
             }
 
+            const coupleId = [currentUser.id, currentUser.partnerId].sort().join('_');
+            const memoryId = 'memory_' + Date.now();
+
             const memory = {
-                id: 'memory_' + Date.now(),
+                id: memoryId,
                 title,
                 category,
                 date,
@@ -1368,26 +1426,25 @@
                 images,
                 createdBy: currentUser.id,
                 createdAt: new Date().toISOString(),
-                coupleId: [currentUser.id, currentUser.partnerId].sort().join('_')
+                coupleId
             };
 
+            await saveToCloud('memory:' + coupleId + ':' + memoryId, memory);
             memories.push(memory);
-            saveMemories();
 
-            showNotification('Kenangan berhasil ditambahkan! 💕', 'success');
+            showNotification('✅ Kenangan berhasil ditambahkan! 💕', 'success');
             
-            // Notify partner
-            if (document.getElementById('settingNotif').checked) {
-                showNotification('Pasangan Anda menambahkan kenangan baru!', 'info');
-            }
-
             document.getElementById('memoryForm').reset();
             selectedFiles = [];
             document.getElementById('previewImages').innerHTML = '';
             
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('memoryDate').value = today;
+
             showTab('timeline');
             renderTimeline();
             renderGallery();
+            showLoading(false);
         }
 
         function fileToBase64(file) {
@@ -1397,29 +1454,6 @@
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
-        }
-
-        function loadMemories() {
-            if (!currentUser.partnerId) {
-                memories = [];
-                return;
-            }
-
-            const coupleId = [currentUser.id, currentUser.partnerId].sort().join('_');
-            const allMemories = JSON.parse(localStorage.getItem('memories') || '[]');
-            memories = allMemories.filter(m => m.coupleId === coupleId);
-        }
-
-        function saveMemories() {
-            const allMemories = JSON.parse(localStorage.getItem('memories') || '[]');
-            const otherMemories = allMemories.filter(m => m.coupleId !== memories[0]?.coupleId);
-            localStorage.setItem('memories', JSON.stringify([...otherMemories, ...memories]));
-        }
-
-        function loadFromStorage() {
-            // Initialize default date
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('memoryDate').value = today;
         }
 
         // Display Functions
@@ -1439,6 +1473,15 @@
 
             const sorted = [...memories].sort((a, b) => new Date(b.date) - new Date(a.date));
             
+            const categoryNames = {
+                date: 'Kencan',
+                travel: 'Traveling',
+                anniversary: 'Anniversary',
+                daily: 'Keseharian',
+                special: 'Momen Spesial',
+                other: 'Lainnya'
+            };
+
             timeline.innerHTML = sorted.map(memory => {
                 const date = new Date(memory.date);
                 const formattedDate = date.toLocaleDateString('id-ID', { 
@@ -1447,15 +1490,6 @@
                     month: 'long', 
                     day: 'numeric' 
                 });
-
-                const categoryNames = {
-                    date: 'Kencan',
-                    travel: 'Traveling',
-                    anniversary: 'Anniversary',
-                    daily: 'Keseharian',
-                    special: 'Momen Spesial',
-                    other: 'Lainnya'
-                };
 
                 return `
                     <div class="memory-card">
@@ -1544,9 +1578,8 @@
             }
 
             const timeline = document.getElementById('memoryTimeline');
-            const sorted = filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
             
-            if (sorted.length === 0) {
+            if (filtered.length === 0) {
                 timeline.innerHTML = `
                     <div class="empty-state">
                         <div style="font-size: 60px;">🔍</div>
@@ -1557,12 +1590,10 @@
                 return;
             }
 
-            // Use same render logic
+            const tempMemories = memories;
             memories = filtered;
             renderTimeline();
-            memories = JSON.parse(localStorage.getItem('memories') || '[]').filter(m => 
-                m.coupleId === [currentUser.id, currentUser.partnerId].sort().join('_')
-            );
+            memories = tempMemories;
         }
 
         // Edit & Delete
@@ -1579,8 +1610,9 @@
             document.getElementById('editModal').classList.add('active');
         }
 
-        function handleEditMemory(e) {
+        async function handleEditMemory(e) {
             e.preventDefault();
+            showLoading(true);
 
             const id = document.getElementById('editMemoryId').value;
             const memory = memories.find(m => m.id === id);
@@ -1592,23 +1624,32 @@
             memory.date = document.getElementById('editDate').value;
             memory.story = document.getElementById('editStory').value;
 
-            saveMemories();
+            await saveToCloud('memory:' + memory.coupleId + ':' + memory.id, memory);
+            
             renderTimeline();
             renderGallery();
             closeEditModal();
 
-            showNotification('Kenangan berhasil diupdate!', 'success');
+            showNotification('✅ Kenangan berhasil diupdate!', 'success');
+            showLoading(false);
         }
 
-        function deleteMemory(id) {
+        async function deleteMemory(id) {
             if (!confirm('Yakin ingin menghapus kenangan ini?')) return;
 
+            showLoading(true);
+
+            const memory = memories.find(m => m.id === id);
+            if (memory) {
+                await deleteFromCloud('memory:' + memory.coupleId + ':' + memory.id);
+            }
+
             memories = memories.filter(m => m.id !== id);
-            saveMemories();
             renderTimeline();
             renderGallery();
 
             showNotification('Kenangan berhasil dihapus', 'info');
+            showLoading(false);
         }
 
         // Modals
@@ -1644,22 +1685,21 @@
         function showTab(tab) {
             currentTab = tab;
             
-            // Update tab buttons
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
 
-            // Hide all tabs
             document.getElementById('timelineTab').classList.add('hidden');
             document.getElementById('addTab').classList.add('hidden');
             document.getElementById('galleryTab').classList.add('hidden');
             document.getElementById('settingsTab').classList.add('hidden');
 
-            // Show selected tab
             if (tab === 'timeline') {
                 document.getElementById('timelineTab').classList.remove('hidden');
                 renderTimeline();
             } else if (tab === 'add') {
                 document.getElementById('addTab').classList.remove('hidden');
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('memoryDate').value = today;
             } else if (tab === 'gallery') {
                 document.getElementById('galleryTab').classList.remove('hidden');
                 renderGallery();
@@ -1669,7 +1709,7 @@
         }
 
         // Settings
-        function handleChangePassword(e) {
+        async function handleChangePassword(e) {
             e.preventDefault();
 
             const oldPassword = document.getElementById('oldPassword').value;
@@ -1686,20 +1726,18 @@
                 return;
             }
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const userIndex = users.findIndex(u => u.id === currentUser.id);
-            
-            users[userIndex].password = newPassword;
-            currentUser.password = newPassword;
+            showLoading(true);
 
-            localStorage.setItem('users', JSON.stringify(users));
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            currentUser.password = newPassword;
+            await saveToCloud('user:' + currentUser.email, currentUser);
+            await saveToCloud('user_by_id:' + currentUser.id, currentUser);
 
             document.getElementById('changePasswordForm').reset();
-            showNotification('Password berhasil diubah!', 'success');
+            showNotification('✅ Password berhasil diubah!', 'success');
+            showLoading(false);
         }
 
-        function exportData() {
+        async function exportData() {
             const data = {
                 user: currentUser,
                 memories: memories,
@@ -1715,10 +1753,10 @@
             a.download = `couple-diary-${Date.now()}.json`;
             a.click();
 
-            showNotification('Data berhasil di-export!', 'success');
+            showNotification('✅ Data berhasil di-export!', 'success');
         }
 
-        // Notifications
+        // Utilities
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
@@ -1734,7 +1772,15 @@
             }, 3000);
         }
 
-        // Close modals on outside click
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.classList.remove('hidden');
+            } else {
+                loading.classList.add('hidden');
+            }
+        }
+
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('active');
